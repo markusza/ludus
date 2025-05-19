@@ -38,7 +38,8 @@ All documentation can be found at [docs.ludus.cloud](https://docs.ludus.cloud) (
 
 ## ⚡️ Quick start
 
-1. curl https://github.com/markusza/ludus/raw/refs/heads/main/install.sh | bash
+1. curl -s https://raw.githubusercontent.com/markusza/ludus/main/install.sh | bash
+
 
 
 
