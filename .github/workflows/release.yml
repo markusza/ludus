@@ -1,0 +1,43 @@
+name: Release Ludus
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, darwin]
+        goarch: [amd64, arm64]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          BIN_NAME=ludus-client_${GOOS}-${GOARCH}-${TAG}
+          go build -o $BIN_NAME ./cmd/ludus
+          sha256sum $BIN_NAME >> ludus_${TAG}_checksums.txt
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ludus-client_*
+            ludus_${{ github.ref_name }}_checksums.txt
