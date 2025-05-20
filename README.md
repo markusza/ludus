@@ -38,9 +38,10 @@ All documentation can be found at [docs.ludus.cloud](https://docs.ludus.cloud) (
 
 ## ⚡️ Quick start
 
-1. Grab the [`ludus-server`](https://gitlab.com/badsectorlabs/ludus/-/releases) binary and copy it to a clean Debian 12 host
-2. Run the `ludus-server` binary to convert the Debian 12 host into a Ludus host
-3. Follow the [Quick Start](https://docs.ludus.cloud/docs/category/quick-start) documentation to get templates built and a range deployed
+1. curl -s https://raw.githubusercontent.com/markusza/ludus/main/install.sh | bash
+
+
+
 
 ## 📷 Screenshots
 
