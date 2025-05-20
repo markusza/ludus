@@ -34,6 +34,9 @@ set -o nounset                              # Treat unset variables as an error
 PROJECT_ID=54052321
 PREFIX="${PREFIX:-}"
 
+REPO_OWNER=markusza
+REPO_NAME=ludus
+
 if [[ -z "${PREFIX}" ]]; then
   INSTALL_PREFIX="/usr/local/bin"
 fi
@@ -515,16 +518,17 @@ main() {
   fi
 
   if command_exists curl; then
-    LATEST_TAG=$(curl -s "https://gitlab.com/api/v4/projects/$PROJECT_ID/repository/tags" | grep -o '"name":"[^"]*' | cut -d'"' -f4 | head -n1)
+    LATEST_TAG=$(curl -s "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/tags" | grep -o '"name": "[^"]*' | cut -d'"' -f4 | head -n1)
   elif command_exists wget; then
-    LATEST_TAG=$(wget -qO- "https://gitlab.com/api/v4/projects/$PROJECT_ID/repository/tags" | grep -o '"name":"[^"]*' | cut -d'"' -f4 | head -n1)
+    LATEST_TAG=$(wget -qO- "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/tags" | grep -o '"name": "[^"]*' | cut -d'"' -f4 | head -n1)
   else
-      echo "Error: Neither curl nor wget is available. Please install one of them."
-      exit 1
+    echo "Error: Neither curl nor wget is available. Please install one of them."
+    exit 1
   fi
 
+
   ludus_bin_name="ludus-client"
-  ludus_base_url="https://gitlab.com/api/v4/projects/$PROJECT_ID/packages/generic/ludus/$LATEST_TAG"
+  ludus_base_url="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$LATEST_TAG"
   prefix="${1}"
 
   print_banner

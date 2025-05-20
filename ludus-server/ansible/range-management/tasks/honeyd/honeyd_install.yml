@@ -1,0 +1,76 @@
+- name: Install Honeyd on Debian 10
+  hosts: honeypots
+  become: true
+  vars:
+    honeyd_repo: https://github.com/DataSoft/Honeyd
+    honeyd_dir: /opt/Honeyd
+
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - libevent-dev
+          - libdumbnet-dev
+          - libpcap-dev
+          - libpcre3-dev
+          - libedit-dev
+          - bison
+          - flex
+          - libtool
+          - automake
+          - git
+          - zlib1g-dev
+          - build-essential
+          - python-pip
+        state: present
+        update_cache: true
+
+    - name: Clone Honeyd repository
+      git:
+        repo: "{{ honeyd_repo }}"
+        dest: "{{ honeyd_dir }}"
+        clone: true
+        update: false
+        validate_certs: false
+
+    - name: Symlink python3 to /usr/bin/python (if not exists)
+      file:
+        src: /usr/bin/python3
+        dest: /usr/bin/python
+        state: link
+      when: ansible_facts['distribution_major_version'] == "10"
+
+    - name: Fix Python 3 octal syntax in init.py
+      replace:
+        path: "{{ honeyd_dir }}/scripts/lib/init.py"
+        regexp: '([^0])0666'
+        replace: '\g<1>0o666'
+
+    - name: Fix Python 3 octal syntax in init.py (0777)
+      replace:
+        path: "{{ honeyd_dir }}/scripts/lib/init.py"
+        regexp: '([^0])0777'
+        replace: '\g<1>0o777'
+
+    - name: Compile and install Honeyd
+      shell: |
+        ./autogen.sh
+        ./configure
+        make
+        make install
+      args:
+        chdir: "{{ honeyd_dir }}"
+        creates: /usr/local/bin/honeyd
+
+    - name: Install Python modules - ipaddress and pandas
+      pip:
+        name:
+          - ipaddress
+          - pandas
+        executable: pip3
+
+    - name: Copy gen script for honeyd config.
+      copy:
+        src: files/windows/scripts
+        dest: "{{ honeyd_dir }}/gen_honeyd_config.py"
+
