@@ -125,6 +125,7 @@
     action: insert
     comment: "Default: allow related/established rule"
     numeric: true
+    rule_num: 1
 
 - name: Set the default external rule
   ansible.builtin.iptables:
@@ -210,6 +211,58 @@
   loop: "{{ network.rules }}"
   when: 'network.rules is defined'
 
+- name: Allow the Ludus IP to hit this router from the outside for ansible
+  ansible.builtin.iptables:
+    chain: LUDUS_DEFAULTS
+    source: "192.0.2.254"
+    in_interface: "{{ router_external_interface }}"
+    protocol: all
+    jump: ACCEPT
+    state: present
+    action: insert
+    comment: "Default: Ludus access rule"
+    numeric: true
+    rule_num: 2
+
+- name: Deny range traffic to the proxmox IP of "192.0.2.254"
+  ansible.builtin.iptables:
+    chain: LUDUS_DEFAULTS
+    source: "10.{{ range_second_octet }}.0.0/16"
+    destination: "192.0.2.254"
+    protocol: all
+    comment: "Default: Deny traffic to the host IP of 192.0.2.254"
+    jump: REJECT
+    state: present
+    action: insert
+    numeric: true
+    rule_num: 3
+
+- name: Deny range traffic to the host local IP
+  ansible.builtin.iptables:
+    chain: LUDUS_DEFAULTS
+    source: "10.{{ range_second_octet }}.0.0/16"
+    destination: "{{ proxmox_local_ip }}"
+    protocol: all
+    comment: "Default: Deny traffic to the host IP of {{ proxmox_local_ip }}"
+    jump: REJECT
+    state: present
+    action: insert
+    numeric: true
+    rule_num: 4
+
+- name: Deny range traffic to the host public IP
+  ansible.builtin.iptables:
+    chain: LUDUS_DEFAULTS
+    source: "10.{{ range_second_octet }}.0.0/16"
+    destination: "{{ proxmox_public_ip }}"
+    protocol: all
+    comment: "Default: Deny traffic to the public IP of {{ proxmox_public_ip }}"
+    jump: REJECT
+    state: present
+    action: insert
+    numeric: true
+    rule_num: 5
+
 # Since user wireguard rules are added to the LUDUS_DEFAULTS chain add this rule after the user defined rules so it will be on top
 - name: Deny all range traffic to user defined "always_blocked_networks"
   ansible.builtin.iptables:
@@ -222,24 +275,13 @@
     action: insert
     comment: "User Default: always_blocked_networks rule"
     numeric: true
+    rule_num: 1 # This is the first rule in the LUDUS_DEFAULTS chain, taking precedence over any other rules
   loop: "{{ network.always_blocked_networks | default([]) }}"
   when: network.always_blocked_networks is defined
 
-- name: Allow the Ludus IP to hit this router from the outside for ansible
-  ansible.builtin.iptables:
-    chain: LUDUS_DEFAULTS
-    source: "192.0.2.254"
-    in_interface: "{{ router_external_interface }}"
-    protocol: all
-    jump: ACCEPT
-    state: present
-    action: insert
-    comment: "Default: Ludus access rule"
-    numeric: true
-
 - name: Reset the conntrack entries to prevent previously allowed traffic to continue
   ansible.builtin.shell: conntrack -F
-  async: 5 # Becuase this resets the conntrack entries, ansible will hang unless we run it async
+  async: 5 # Because this resets the conntrack entries, ansible will hang unless we run it async
   poll: 1
 
 - name: Save current state of the firewall to a file
