@@ -621,14 +621,6 @@
       loop: "{{ ludus }}"
       when: 'item.linux is defined and item.linux.packages is defined'
 
-- name: Run HoneyD installation task
-  tags: [linux-packages]
-  hosts: "{{ hostvars['localhost']['linux_packages_vms'] | default([]) }}"
-  tasks:
-    - name: Run HoneyD installation task
-      ansible.builtin.include_tasks: tasks/honeyd/honeyd_install.yml
-      when: 'item.linux is defined and item.honeyd is defined'
-
 - name: Install Linux packages
   tags: [linux-packages]
   hosts: "{{ hostvars['localhost']['linux_packages_vms'] | default([]) }}"

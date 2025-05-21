@@ -1,0 +1,4 @@
+---
+# vars file for honeyd_deploy
+honeyd_repo: https://github.com/DataSoft/Honeyd
+honeyd_dir: /opt/Honeyd

@@ -1,0 +1,68 @@
+---
+- name: Install required packages
+  apt:
+    name:
+      - libevent-dev
+      - libdumbnet-dev
+      - libpcap-dev
+      - libpcre3-dev
+      - libedit-dev
+      - bison
+      - flex
+      - libtool
+      - automake
+      - git
+      - zlib1g-dev
+      - build-essential
+      - python-ipaddress
+    state: present
+    update_cache: true
+  become: true
+
+- name: Clone Honeyd repository
+  git:
+    repo: "{{ honeyd_repo }}"
+    dest: "{{ honeyd_dir }}"
+    clone: true
+    update: false
+  become: true
+
+- name: Symlink python3 to /usr/bin/python (if not exists)
+  file:
+    src: /usr/bin/python3
+    dest: /usr/bin/python
+    state: link
+  when: ansible_facts['distribution_major_version'] == "10"
+  become: true
+
+- name: Fix Python 3 octal syntax in init.py
+  replace:
+    path: "{{ honeyd_dir }}/scripts/lib/init.py"
+    regexp: '([^0])0666'
+    replace: '\g<1>0o666'
+  become: true
+
+- name: Fix Python 3 octal syntax in init.py (0777)
+  replace:
+    path: "{{ honeyd_dir }}/scripts/lib/init.py"
+    regexp: '([^0])0777'
+    replace: '\g<1>0o777'
+  become: true
+
+- name: Compile and install Honeyd
+  shell: |
+    ./autogen.sh
+    ./configure
+    make
+    make install
+  args:
+    chdir: "{{ honeyd_dir }}"
+    creates: /usr/local/bin/honeyd
+  become: true
+
+- name: Copy gen script for honeyd config.
+  ansible.builtin.copy:
+    src: honeyd_gen_config.py
+    dest: "{{ honeyd_dir }}/gen_honeyd_config.py"
+  become: true
+
